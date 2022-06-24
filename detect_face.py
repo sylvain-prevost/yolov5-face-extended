@@ -58,13 +58,14 @@ def show_results(img, xyxy, conf, landmarks, class_num):
 
     clors = [(255,0,0),(0,255,0),(0,0,255),(255,255,0),(0,255,255)]
 
-    for i in range(5):
-        point_x = int(landmarks[2 * i])
-        point_y = int(landmarks[2 * i + 1])
-        cv2.circle(img, (point_x, point_y), tl+1, clors[i], -1)
+    if landmarks != None:
+        for i in range(5):
+            point_x = int(landmarks[2 * i])
+            point_y = int(landmarks[2 * i + 1])
+            cv2.circle(img, (point_x, point_y), tl+1, clors[i], -1)
 
     tf = max(tl - 1, 1)  # font thickness
-    label = str(conf)[:5]
+    label = str(int(class_num)) + ":" + str(conf)[:5]
     cv2.putText(img, label, (x1, y1 - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
     return img
 
@@ -105,6 +106,7 @@ def detect_one(model, image_path, device):
     pred = model(img)[0]
 
     # Apply NMS
+    nc = pred.shape[2] - 15  # number of classes
     pred = non_max_suppression_face(pred, conf_thres, iou_thres)
 
     print('img.shape: ', img.shape)
@@ -125,8 +127,11 @@ def detect_one(model, image_path, device):
             for j in range(det.size()[0]):
                 xyxy = det[j, :4].view(-1).tolist()
                 conf = det[j, 4].cpu().numpy()
-                landmarks = det[j, 5:15].view(-1).tolist()
                 class_num = det[j, 15].cpu().numpy()
+                if (class_num == (nc - 1)):
+                    landmarks = det[j, 5:15].view(-1).tolist()
+                else:
+                    landmarks = None
                 orgimg = show_results(orgimg, xyxy, conf, landmarks, class_num)
 
     cv2.imwrite('result.jpg', orgimg)

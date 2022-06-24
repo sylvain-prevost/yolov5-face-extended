@@ -230,7 +230,13 @@ class LoadFaceImagesAndLabels(Dataset):  # for training/testing
                 if os.path.isfile(lb_file):
                     nf += 1  # label found
                     with open(lb_file, 'r') as f:
-                        l = np.array([x.split() for x in f.read().strip().splitlines()], dtype=np.float32)  # labels
+                        l = [x.split() for x in f.read().strip().splitlines() if len(x)]
+                        for i in range(len(l)):
+                            entry = l[i]
+                            if len(entry) == (1 + 4):
+                                entry.extend([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1])
+                            l[i] = entry
+                        l = np.array(l, dtype=np.float32)
                     if len(l):
                         assert l.shape[1] == 15, 'labels require 15 columns each'
                         assert (l >= -1).all(), 'negative labels'
